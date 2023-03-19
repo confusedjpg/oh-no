@@ -1,0 +1,4 @@
+config.pkl
+.env
+discord.log
+__pycache__

@@ -1,10 +1,13 @@
 import os
 import logging
 import pickle
+import random as rd
 
 import discord
 from discord.ext import commands # easier command integration
 from dotenv import load_dotenv
+
+from tools import fetchCopypasta
 
 # first time configuration
 if not os.path.isfile("config.pkl"):
@@ -38,6 +41,9 @@ intents.members = True
 # create the bot, without the help command because I am a big boy now and can do my own help command
 # ...what the fuck am I doing
 bot = commands.Bot(command_prefix=PREFIX, description="A general purpose bot.", intents=intents, help_command=None)
+
+# initially fetch some copypastas
+COPYPASTAS = fetchCopypasta()
 
 @bot.event
 async def on_ready():
@@ -77,12 +83,12 @@ async def _help(ctx: commands.Context, command: str = None):
         for cmd in bot.commands:
             # then fetch and add their name + description to the embed
             description = cmd.help.split('\n')[0]
-            value += f"{cmd.name} - {description}\n"
+            value += f"`{cmd.name}` - {description}\n"
         Embed.add_field(name="Commands", value=value)
 
     # set author and footer
     Embed.set_author(name=bot.get_user(OWNER_ID).name, icon_url=bot.get_user(OWNER_ID).avatar.url)
-    Embed.add_field(name="Note", value=f"Type `{bot.command_prefix}help <command>` to get more help with a specific command.", inline=False)
+    Embed.set_footer(text=f"Note: type `{bot.command_prefix}help <command>` to get more help with a specific command.")
 
     # finally, send embed
     await ctx.send(embed=Embed)
@@ -111,17 +117,21 @@ async def prefix(ctx: commands.Context, prefix: str = None):
         config prefix ! 
     """ 
 
+    # unpickle config data
     with open("config.pkl", "rb") as f:
         config = pickle.load(f)
     
+    # default answer
     if not prefix:
         await ctx.send(f"Current prefix: `{config['prefix']}`.")
         return
 
+    # change global prefix and pickle
     config["prefix"] = prefix
     with open("config.pkl", "wb") as f:
         pickle.dump(config, f)
 
+    # change prefix locally
     bot.command_prefix = prefix
     await ctx.send(f"Prefix successfully changed to `{prefix}`")
 
@@ -134,20 +144,52 @@ async def status(ctx: commands.Context, status: str = None):
     Usage::
         config status "Minecraft at 3a.m on a monday night"
     """
-
+    # almost same as prefix
+    # unpickle
     with open("config.pkl", "rb") as f:
         config = pickle.load(f)
     
+    # default answer, in case of empty args
     if not status:
         await ctx.send(f"Current status: `{config['status']}`.")
         return
 
+    # pickle back and change status globally
     config["status"] = status
     with open("config.pkl", "wb") as f:
         pickle.dump(config, f)
 
+    # change status locally
     await bot.change_presence(activity=discord.Game(status))
     await ctx.send(f"Status successfully changed to `{status}`")
+
+@bot.command(name="copypasta")
+async def copypasta(ctx: commands.Context):
+    """Get a random copypasta from https://www.twitchquotes.com/random/feed
+    
+    Usage::
+        copypasta
+    """
+
+    # it is what it is...
+    global COPYPASTAS
+
+    # if list of copypastas is empty, re-fetch copypastas
+    if not COPYPASTAS:
+        await ctx.send("Wait hold on, I gotta fetch some fresh copypastas...")
+        COPYPASTAS = fetchCopypasta()
+    
+    # fetch one from the list and delete it
+    rand = rd.choice(list(COPYPASTAS.keys()))
+    title, copypasta = rand, COPYPASTAS[rand]
+    del COPYPASTAS[rand]
+
+    # make an embed, for prettier visuals
+    Embed = discord.Embed(title=title, description=copypasta)
+    Embed.set_footer(text="Note: this command relies on how https://www.twitchquotes.com/random/feed is built. This means that it can break at any point.")
+
+    # finally, send embed
+    await ctx.send(embed=Embed)
 
 # run bot
 # log level can be changed to something more specific, if needed

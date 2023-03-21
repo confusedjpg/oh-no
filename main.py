@@ -10,7 +10,7 @@ from discord.ext import commands # easier command integration
 from dotenv import load_dotenv
 
 # local "modules"
-from tools import fetchCopypasta
+from tools import fetchCopypasta, addTag
 
 # first time configuration
 if not os.path.isfile("config.pkl"):
@@ -50,8 +50,33 @@ COPYPASTAS = fetchCopypasta()
 
 @bot.event
 async def on_ready():
+    # notify login and set default status
     print(f"Logged in as {bot.user} (ID: {bot.user.id}). \nReady to operate!")
     await bot.change_presence(activity=discord.Game(STATUS))
+
+    # make the help embed only once as it would be useless to do it every single time
+    # this could be made into a function instead
+    global HELP
+    # create embed
+    HELP = discord.Embed(title="help", description="A curated list of all commands the bot has.", color=discord.Color.green())
+
+    # get all tags
+    tags = set()
+    for cmd in bot.commands:
+        tags.add(cmd.tag)
+
+    # add every category to the embed
+    for tag in tags:
+        # except hidden ones
+        if tag == "hidden":
+            continue
+        value = ""
+        for cmd in bot.commands:
+            if cmd.tag == tag:
+                description = cmd.help.split('\n')[0]
+                value += f"`{cmd.name}` - {description}\n"
+        HELP.add_field(name=tag.capitalize(), value=value)
+
 
 @bot.listen('on_message')
 async def messageHandler(message: discord.Message):
@@ -63,9 +88,7 @@ async def messageHandler(message: discord.Message):
 # mostly tool commands
 
 # help command embed
-# it's supposed to be a rich embed, containing useful and detailed informations about ALL commands, classified by categories
-# for later reference: 
-# keep in mind that a discord.ext.commands.Command object has attributes pointing to all the information you'd need to display in a help embed
+@addTag("tools")
 @bot.command(name="help")
 async def _help(ctx: commands.Context, command: str = None):
     """Displays a nice help embed
@@ -80,16 +103,19 @@ async def _help(ctx: commands.Context, command: str = None):
         Embed = discord.Embed(title=command, description=[cmd.help for cmd in bot.commands if cmd.name == command][0], color=discord.Color.green())
 
     else:
-        # create embed
-        Embed = discord.Embed(title="help", description="A curated list of all commands the bot has.", color=discord.Color.green())
-        
-        # cycle through every command object
-        value = ""
-        for cmd in bot.commands:
-            # then fetch and add their name + description to the embed
-            description = cmd.help.split('\n')[0]
-            value += f"`{cmd.name}` - {description}\n"
-        Embed.add_field(name="Commands", value=value)
+        # get default embed made earlier
+        # yes, with a global variable
+        Embed = HELP
+
+        # do we add hidden commands?
+        if command == "hidden":
+            value = ""
+            # cycle through all commands and get only hidden ones
+            for cmd in bot.commands:
+                if cmd.tag == "hidden":
+                    description = cmd.help.split('\n')[0]
+                    value += f"`{cmd.name}` - {description}\n"
+            Embed.add_field(name="Hidden", value=value)
 
     # set author and footer
     Embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
@@ -98,6 +124,7 @@ async def _help(ctx: commands.Context, command: str = None):
     # finally, send embed
     await ctx.send(embed=Embed)
 
+@addTag("hidden")
 @bot.command(name="log")
 async def log(ctx: commands.Context):
     """Returns most recent log in file form
@@ -112,6 +139,7 @@ async def log(ctx: commands.Context):
 
 # the next two commands seem very similar
 # but I don't see how to improve them yet...too bad!
+@addTag("tools")
 @bot.command(name="prefix")
 async def prefix(ctx: commands.Context, prefix: str = None):
     """ Modify (or not) default prefix
@@ -140,6 +168,7 @@ async def prefix(ctx: commands.Context, prefix: str = None):
     bot.command_prefix = prefix
     await ctx.send(f"Prefix successfully changed to `{prefix}`")
 
+@addTag("hidden")
 @bot.command(name="status")
 async def status(ctx: commands.Context, status: str = None):
     """ Modify (or not) default status
@@ -168,6 +197,7 @@ async def status(ctx: commands.Context, status: str = None):
     await bot.change_presence(activity=discord.Game(status))
     await ctx.send(f"Status successfully changed to `{status}`")
 
+@addTag("tools")
 @bot.command(name="haha")
 async def haha(ctx: commands.Context):
     """Like a ping command; Returns a response + latency"""
@@ -176,6 +206,8 @@ async def haha(ctx: commands.Context):
     await ctx.send(f"haha jonathan i am a bot\n{int(bot.latency*1000)}ms")
 
 # entertainment commands
+
+@addTag("entertainment")
 @bot.command(name="copypasta")
 async def copypasta(ctx: commands.Context):
     """Get a random copypasta

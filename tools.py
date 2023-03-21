@@ -61,3 +61,13 @@ def fetchCopypasta():
         copypastas[title.string.replace("\n", "").strip()] = copypasta.string
     
     return copypastas
+
+# decorator for adding a tag to supplied function
+def addTag(tag):
+    # the wrapper func itself
+    def wrapper(func):
+        # add a tag attribute
+        func.tag = tag
+        return func
+    # return wrapped function
+    return wrapper

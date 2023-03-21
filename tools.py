@@ -1,7 +1,8 @@
-# load required modules
+# included modules
 import random as rd
 from urllib.request import urlopen
 
+# third-party modules
 from bs4 import BeautifulSoup
 
 # useless docstring/help attribute parser, for now
@@ -27,7 +28,7 @@ def format(func):
     desc = docstrr[0]
 
     # get every argument (unless i forget to mention one in the docstring)
-    # and put it in a dictionary, along its description
+    # and put it in a dictionary, along with its description
     args = {}
     for line in docstrr[1:docstrr.index("Usage::")]:
         if line.replace(" ", ""):

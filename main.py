@@ -1,12 +1,15 @@
+# included modules
 import os
 import logging
 import pickle
 import random as rd
 
+# third-party modules
 import discord
 from discord.ext import commands # easier command integration
 from dotenv import load_dotenv
 
+# local "modules"
 from tools import fetchCopypasta
 
 # first time configuration
@@ -22,7 +25,6 @@ with open("config.pkl", "rb") as f:
 # set up env variables
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
-OWNER_ID = int(os.getenv("OWNER_ID"))
 
 # log everything to a file
 # no need to keep logs of previous sessions, set mode to 'a' otherwise
@@ -43,6 +45,7 @@ intents.members = True
 bot = commands.Bot(command_prefix=PREFIX, description="A general purpose bot.", intents=intents, help_command=None)
 
 # initially fetch some copypastas
+print("Getting a few copypastas...")
 COPYPASTAS = fetchCopypasta()
 
 @bot.event
@@ -57,6 +60,8 @@ async def messageHandler(message: discord.Message):
     if message.author.id == bot.application_id:
         return
 
+# mostly tool commands
+
 # help command embed
 # it's supposed to be a rich embed, containing useful and detailed informations about ALL commands, classified by categories
 # for later reference: 
@@ -65,7 +70,7 @@ async def messageHandler(message: discord.Message):
 async def _help(ctx: commands.Context, command: str = None):
     """Displays a nice help embed
     
-    command: A command on which you need more detailed info
+    :param command (str): A command on which you need more detailed info
 
     Usage::
         help log
@@ -87,7 +92,7 @@ async def _help(ctx: commands.Context, command: str = None):
         Embed.add_field(name="Commands", value=value)
 
     # set author and footer
-    Embed.set_author(name=bot.get_user(OWNER_ID).name, icon_url=bot.get_user(OWNER_ID).avatar.url)
+    Embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
     Embed.set_footer(text=f"Note: type `{bot.command_prefix}help <command>` to get more help with a specific command.")
 
     # finally, send embed
@@ -109,9 +114,9 @@ async def log(ctx: commands.Context):
 # but I don't see how to improve them yet...too bad!
 @bot.command(name="prefix")
 async def prefix(ctx: commands.Context, prefix: str = None):
-    """ Modify (or not) default prefix.
+    """ Modify (or not) default prefix
     
-    prefix: Usually a character, but if you want a cursed prefix use a word, or a full on sentence: \"dumb prefix choice\".
+    :param prefix (str): Usually a character, but if you want a cursed prefix use a word, or a full on sentence: \"dumb prefix choice\"
 
     Usage::
         config prefix ! 
@@ -137,9 +142,9 @@ async def prefix(ctx: commands.Context, prefix: str = None):
 
 @bot.command(name="status")
 async def status(ctx: commands.Context, status: str = None):
-    """ Modify (or not) default status.
+    """ Modify (or not) default status
     
-    status: A word, for a longer status use (double)quotes: \"...\".
+    :param status (str): A word, for a longer status use (double)quotes: \"...\"
     
     Usage::
         config status "Minecraft at 3a.m on a monday night"
@@ -163,9 +168,17 @@ async def status(ctx: commands.Context, status: str = None):
     await bot.change_presence(activity=discord.Game(status))
     await ctx.send(f"Status successfully changed to `{status}`")
 
+@bot.command(name="haha")
+async def haha(ctx: commands.Context):
+    """Like a ping command; Returns a response + latency"""
+
+    # send back latency rounded in ms
+    await ctx.send(f"haha jonathan i am a bot\n{int(bot.latency*1000)}ms")
+
+# entertainment commands
 @bot.command(name="copypasta")
 async def copypasta(ctx: commands.Context):
-    """Get a random copypasta from https://www.twitchquotes.com/random/feed
+    """Get a random copypasta
     
     Usage::
         copypasta
@@ -186,6 +199,7 @@ async def copypasta(ctx: commands.Context):
 
     # make an embed, for prettier visuals
     Embed = discord.Embed(title=title, description=copypasta)
+    Embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
     Embed.set_footer(text="Note: this command relies on how https://www.twitchquotes.com/random/feed is built. This means that it can break at any point.")
 
     # finally, send embed

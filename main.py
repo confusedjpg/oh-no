@@ -10,7 +10,7 @@ from discord.ext import commands # easier command integration
 from dotenv import load_dotenv
 
 # local "modules"
-from tools import fetchCopypasta, addTag
+from tools import *
 
 # first time configuration
 if not os.path.isfile("config.pkl"):
@@ -88,12 +88,12 @@ async def messageHandler(message: discord.Message):
 # mostly tool commands
 
 # help command embed
-@addTag("tools")
+@addTag("utility")
 @bot.command(name="help")
 async def _help(ctx: commands.Context, command: str = None):
     """Displays a nice help embed
     
-    :param command (str): A command on which you need more detailed info
+    :param command: A command on which you need more detailed info
 
     Usage::
         help log
@@ -124,7 +124,7 @@ async def _help(ctx: commands.Context, command: str = None):
     # finally, send embed
     await ctx.send(embed=Embed)
 
-@addTag("hidden")
+@addTag("bot")
 @bot.command(name="log")
 async def log(ctx: commands.Context):
     """Returns most recent log in file form
@@ -139,16 +139,18 @@ async def log(ctx: commands.Context):
 
 # the next two commands seem very similar
 # but I don't see how to improve them yet...too bad!
-@addTag("tools")
+@addTag("bot")
 @bot.command(name="prefix")
-async def prefix(ctx: commands.Context, prefix: str = None):
+async def prefix(ctx: commands.Context, *prefix: str):
     """ Modify (or not) default prefix
     
-    :param prefix (str): Usually a character, but if you want a cursed prefix use a word, or a full on sentence: \"dumb prefix choice\"
+    :param prefix: Usually a character, but if you want a cursed prefix use a word, or even a full on sentence (I'm not saying it's a dumb idea, but it is)
 
     Usage::
         config prefix ! 
     """ 
+    # unpack that tuple into a string
+    prefix = ' '.join(prefix)
 
     # unpickle config data
     with open("config.pkl", "rb") as f:
@@ -168,17 +170,21 @@ async def prefix(ctx: commands.Context, prefix: str = None):
     bot.command_prefix = prefix
     await ctx.send(f"Prefix successfully changed to `{prefix}`")
 
-@addTag("hidden")
+@addTag("bot")
 @bot.command(name="status")
-async def status(ctx: commands.Context, status: str = None):
+async def status(ctx: commands.Context, *status: str):
     """ Modify (or not) default status
     
-    :param status (str): A word, for a longer status use (double)quotes: \"...\"
+    :param status: A word, or a sentence. Basically anything your heart desires
     
     Usage::
         config status "Minecraft at 3a.m on a monday night"
     """
     # almost same as prefix
+
+    # unpack that tuple into a string
+    status = ' '.join(status)
+
     # unpickle
     with open("config.pkl", "rb") as f:
         config = pickle.load(f)
@@ -197,13 +203,59 @@ async def status(ctx: commands.Context, status: str = None):
     await bot.change_presence(activity=discord.Game(status))
     await ctx.send(f"Status successfully changed to `{status}`")
 
-@addTag("tools")
+@addTag("bot")
 @bot.command(name="haha")
 async def haha(ctx: commands.Context):
     """Like a ping command; Returns a response + latency"""
 
     # send back latency rounded in ms
     await ctx.send(f"haha jonathan i am a bot\n{int(bot.latency*1000)}ms")
+
+@addTag("utility")
+@bot.command(name="weather")
+async def weather(ctx: commands.Context, location: str = None, units: str = "metric"):
+    """Get current weather for a given location. Returns data for a random location if nothing is provided
+    
+    :param location: A city works best. Use quotes for spaced input
+    :param units: The units you want data in. Can be standard, metric or imperial
+
+    Usage::
+        weather Stockholm
+        weather "Los Angeles" imperial
+    """
+
+    units = units.lower()
+    if units not in ["metric", "standard", "imperial"]:
+        units = "metric"
+
+    try:
+        name, weather, main, wind = getWeather(location, units=units)
+    except:
+        await ctx.send("Uh oh! Your location doesn't seem to exist, or the website is down :sob:")
+        return
+
+    Embed = discord.Embed(title=name, description=weather["description"])
+
+    Embed.add_field(name="Temperature", value=(
+        f"Temperature: `{main['temp']}{'°K' if units == 'standard' else '°C' if units == 'metric' else '°F'}`\n"
+        f"Feels like: `{main['feels_like']}{'°K' if units == 'standard' else '°C' if units == 'metric' else '°F'}`\n"
+        f"Min temperature: `{main['temp_min']}{'°K' if units == 'standard' else '°C' if units == 'metric' else '°F'}`\n"
+        f"Max temperature: `{main['temp_max']}{'°K' if units == 'standard' else '°C' if units == 'metric' else '°F'}`\n"
+    ))
+
+    Embed.add_field(name="Additional factors", value=(
+        f"Pressure: `{main['pressure']} hPa`\n"
+        f"Humidity: `{main['humidity']}%`\n"
+        f"Wind speed: `{wind['speed']} {'miles/hour' if units == 'imperial' else 'meter/sec'}`\n"
+        f"Wind direction: `{wind['deg']}°`\n"
+    ))
+
+    Embed.set_thumbnail(url=f"https://openweathermap.org/img/wn/{weather['icon']}@2x.png")
+    Embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
+    # manually inserting an url feels cursed but here we are
+    Embed.set_footer(text="Information provided by openweathermap.org", icon_url="https://openweathermap.org/themes/openweathermap/assets/img/mobile_app/android-app-top-banner.png")
+
+    await ctx.send(embed=Embed)
 
 # entertainment commands
 
@@ -224,6 +276,10 @@ async def copypasta(ctx: commands.Context):
         await ctx.send("Wait hold on, I gotta fetch some fresh copypastas...")
         COPYPASTAS = fetchCopypasta()
     
+    if COPYPASTAS == None:
+        await ctx.send("Uh oh! The copypasta store seems to be empty right now :sob:")
+        return
+
     # fetch one from the list and delete it
     rand = rd.choice(list(COPYPASTAS.keys()))
     title, copypasta = rand, COPYPASTAS[rand]

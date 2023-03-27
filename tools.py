@@ -73,6 +73,21 @@ def fetchCopypasta():
     
     return copypastas
 
+# scrap the comic you get from https://c.xkcd.com/random/comic/
+def fetchComic():
+    # you know the drill
+    html = requests.get("https://c.xkcd.com/random/comic/")
+    if html.status_code != 200:
+        return None
+    
+    soup = BeautifulSoup(html.text, "html.parser")
+
+    # title, comic itself BUT also the hover description
+    title = soup.find("div", attrs={"id": "ctitle"}).string
+    comic = soup.find("div", attrs={"id": "comic"}).find("img")
+
+    return title, "https:"+comic.attrs.get("src"), comic.attrs.get("title")
+
 # decorator for adding a tag to supplied function
 def addTag(tag):
     # the wrapper func itself

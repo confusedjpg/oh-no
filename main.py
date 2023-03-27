@@ -206,15 +206,34 @@ async def status(ctx: commands.Context, *status: str):
 @addTag("bot")
 @bot.command(name="haha")
 async def haha(ctx: commands.Context):
-    """Like a ping command; Returns a response + latency"""
+    """Like a ping command; 
+    Returns a response + latency"""
 
     # send back latency rounded in ms
-    await ctx.send(f"haha jonathan i am a bot\n{int(bot.latency*1000)}ms")
+    # this is the most beautiful thing in this code
+    await ctx.send(f"""⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⢀⣤⣤⣄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⣴⣤⣤⣤⣴⣾⣿⣿⣿⣿⡄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⠠⠾⢿⣿⣿⠟⠋⠁⠤⣬⣽⣿⡇⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⡄⠄⠄⢀⣽⣦⡎⠁⠒⠒⢻⣿⣿⣄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⢀⣧⡀⢀⣾⣿⣿⣧⣦⣴⣾⣿⣿⣿⣿⣧⠄⠄⣠⣴⣆⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⡻⣿⣿⣿⣿⣧⢸⣿⣿⣿⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠘⠿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣸⣿⣿⣿⣿⣿⣿⣿⣝⣿⡟⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠸⣄⢺⣿⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⢿⠄⡀⠄⣸⣿⡿⣻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⠸⡆⠄⣀⣛⣫⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⠄⠇⠄⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⠄⠐⠄⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠃⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠈⠿⠽⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⢸⣿⣿⣿⡿⠟⠛⠉⠄⠄⠄⠄⠄⠄⠄⠄\nhaha jonathan, i am a bot\n{int(bot.latency*1000)}ms""")
 
 @addTag("utility")
 @bot.command(name="weather")
 async def weather(ctx: commands.Context, location: str = None, units: str = "metric"):
-    """Get current weather for a given location. Returns data for a random location if nothing is provided
+    """Get weather at a location.
+    Returns data for a random location if nothing is provided
     
     :param location: A city works best. Use quotes for spaced input
     :param units: The units you want data in. Can be standard, metric or imperial
@@ -236,11 +255,13 @@ async def weather(ctx: commands.Context, location: str = None, units: str = "met
 
     Embed = discord.Embed(title=name, description=weather["description"])
 
+    unit = '°K' if units == 'standard' else '°C' if units == 'metric' else '°F'
+
     Embed.add_field(name="Temperature", value=(
-        f"Temperature: `{main['temp']}{'°K' if units == 'standard' else '°C' if units == 'metric' else '°F'}`\n"
-        f"Feels like: `{main['feels_like']}{'°K' if units == 'standard' else '°C' if units == 'metric' else '°F'}`\n"
-        f"Min temperature: `{main['temp_min']}{'°K' if units == 'standard' else '°C' if units == 'metric' else '°F'}`\n"
-        f"Max temperature: `{main['temp_max']}{'°K' if units == 'standard' else '°C' if units == 'metric' else '°F'}`\n"
+        f"Temperature: `{main['temp']}{unit}`\n"
+        f"Feels like: `{main['feels_like']}{unit}`\n"
+        f"Min temperature: `{main['temp_min']}{unit}`\n"
+        f"Max temperature: `{main['temp_max']}{unit}`\n"
     ))
 
     Embed.add_field(name="Additional factors", value=(
@@ -262,11 +283,7 @@ async def weather(ctx: commands.Context, location: str = None, units: str = "met
 @addTag("entertainment")
 @bot.command(name="copypasta")
 async def copypasta(ctx: commands.Context):
-    """Get a random copypasta
-    
-    Usage::
-        copypasta
-    """
+    """Get a random copypasta"""
 
     # it is what it is...
     global COPYPASTAS
@@ -291,6 +308,25 @@ async def copypasta(ctx: commands.Context):
     Embed.set_footer(text="Note: this command relies on how https://www.twitchquotes.com/random/feed is built. This means that it can break at any point.")
 
     # finally, send embed
+    await ctx.send(embed=Embed)
+
+@addTag("entertainment")
+@bot.command(name="xkcd")
+async def xkcd(ctx: commands.Context):
+    """Get a random xkcd comic"""
+
+    # do you even work?
+    try:
+        title, url, desc = fetchComic()
+    except:
+        await ctx.send("Uh oh! Randall forgot to pay for the domain name...")
+
+    # making of the embed
+    Embed = discord.Embed(title=title, description="xkcd.com")
+    Embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
+    Embed.set_image(url=url)
+    Embed.set_footer(text=desc)
+
     await ctx.send(embed=Embed)
 
 # run bot

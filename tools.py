@@ -5,11 +5,14 @@
 import random as rd
 import requests
 import os
+import pickle
+import io
 
 # third-party modules
 import discord
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from colorthief import ColorThief
 
 # env variables
 load_dotenv()
@@ -127,3 +130,41 @@ def getWeather(location, units = "metric"):
     data = raw.json()
 
     return data["name"] if data["name"] else "Unknown Name", data["weather"][0], data["main"], data["wind"]
+
+# handle song data
+def handleSongs(spotify = None):
+    # create file if not there
+    if not os.path.isfile("songs.pkl"):
+        with open("songs.pkl", "wb") as f:
+            pickle.dump({}, f)
+    
+    # load data from the file
+    with open("songs.pkl", "rb") as f:
+        data = pickle.load(f)
+
+    # return that data it if needed
+    if not spotify:
+        return data
+    
+    # otherwise, add a new song to the list
+    else:
+        if spotify.track_id not in data:
+            with open("songs.pkl", "wb") as f:
+                # get the accent color of the song's cover
+                # file object: much easier and simpler than writing the file to disk and then deleting it
+                img = io.BytesIO(requests.get(spotify.album_cover_url).content)
+
+                # get the color we need
+                r,g,b = ColorThief(img).get_color(quality=10)
+
+                # put all this new data into the file
+                data[spotify.track_id] = {
+                    "album": spotify.album, 
+                    "album_cover_url": spotify.album_cover_url, 
+                    "artists": spotify.artists,
+                    "color": discord.Colour.from_rgb(r,g,b).value,
+                    "title": spotify.title,
+                    "track_url": spotify.track_url
+                    }
+                
+                pickle.dump(data, f)

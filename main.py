@@ -33,12 +33,13 @@ handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w'
 # set required intents
 # for more privileged intents, going to the bot's dashboard might be a good idea
 # for more info: https://discordpy.readthedocs.io/en/stable/intents.html
-intents = discord.Intents.default()
-intents.message_content = True
+intents = discord.Intents().all()
+#intents.message_content = True
+#intents.presences = True
 
 # note: never forget this intent when working with members
 # otherwise you will debug your code for 1h before realising it
-intents.members = True
+#intents.members = True
 
 # create the bot, without the help command because I am a big boy now and can do my own help command
 # ...what the fuck am I doing
@@ -67,9 +68,6 @@ async def on_ready():
 
     # add every category to the embed
     for tag in tags:
-        # except hidden ones
-        if tag == "hidden":
-            continue
         value = ""
         for cmd in bot.commands:
             if cmd.tag == tag:
@@ -82,8 +80,16 @@ async def on_ready():
 async def messageHandler(message: discord.Message):
     # a listener to process messages asynchronously
     # don't handle commands here
-    if message.author.id == bot.application_id:
-        return
+    #if message.author.id == bot.application_id:
+    #    return
+    pass
+
+@bot.event
+async def on_presence_update(before: discord.Member, after: discord.Member):
+    # if someone is listening to Spotify, add their song to the bot's "music taste list"
+    if after.activity and (after.activity.name == "Spotify"):
+        print("you're listening to music, nice")
+        handleSongs(after.activity)
 
 # mostly tool commands
 
@@ -106,16 +112,6 @@ async def _help(ctx: commands.Context, command: str = None):
         # get default embed made earlier
         # yes, with a global variable
         Embed = HELP
-
-        # do we add hidden commands?
-        if command == "hidden":
-            value = ""
-            # cycle through all commands and get only hidden ones
-            for cmd in bot.commands:
-                if cmd.tag == "hidden":
-                    description = cmd.help.split('\n')[0]
-                    value += f"`{cmd.name}` - {description}\n"
-            Embed.add_field(name="Hidden", value=value)
 
     # set author and footer
     Embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
@@ -328,6 +324,24 @@ async def xkcd(ctx: commands.Context):
     Embed.set_footer(text=desc)
 
     await ctx.send(embed=Embed)
+
+@addTag("entertainment")
+@bot.command(name="song")
+async def song(ctx: commands.Context):
+    """Fetch a random song the bot likes
+    The bot takes the songs from a "database" he builds over time.
+    He takes songs from the users in the servers he's in: it's what makes it his "music taste".
+    So, go on, listen to some music when the bot is there!"""
+    
+    # get a random song's data
+    data = rd.choice(list(handleSongs().values()))
+
+    # create embed accordingly
+    Embed = discord.Embed(description=f"by {', '.join(data['artists'])}\non {data['album']}", color=data["color"])
+    Embed.set_author(name=data['title'], url=data["track_url"])
+    Embed.set_thumbnail(url=data["album_cover_url"])
+    
+    await ctx.channel.send(embed=Embed)
 
 # run bot
 # log level can be changed to something more specific, if needed

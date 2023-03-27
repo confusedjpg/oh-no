@@ -1,4 +1,4 @@
-config.pkl
+*.pkl
 .env
 discord.log
 __pycache__

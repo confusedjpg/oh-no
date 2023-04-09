@@ -1,7 +1,7 @@
 # included modules
 import os
 import logging
-import pickle
+import shelve
 import random as rd
 
 # third-party modules
@@ -12,15 +12,10 @@ from dotenv import load_dotenv
 # local "modules"
 from tools import *
 
-# first time configuration
-if not os.path.isfile("config.pkl"):
-    with open("config.pkl", "wb") as f:
-        pickle.dump({"prefix": input('Choose prefix: '), "status": input("Choose status: ")}, f)
-
-# temporary variables to be used a bit further in the bot initialisation
-with open("config.pkl", "rb") as f:
-    config = pickle.load(f)
-    PREFIX, STATUS =  config["prefix"], config["status"]
+with shelve.open("config.shlv") as conf:
+    # temporary variables to be used a bit further in the bot initialisation
+    PREFIX, STATUS =  conf.setdefault("prefix", "!"), conf.setdefault("status", "!help")
+    print("Prefix:", PREFIX, "Status:", STATUS)
 
 # set up env variables
 load_dotenv()
@@ -88,7 +83,6 @@ async def messageHandler(message: discord.Message):
 async def on_presence_update(before: discord.Member, after: discord.Member):
     # if someone is listening to Spotify, add their song to the bot's "music taste list"
     if after.activity and (after.activity.name == "Spotify"):
-        print("you're listening to music, nice")
         handleSongs(after.activity)
 
 # mostly tool commands
@@ -148,19 +142,16 @@ async def prefix(ctx: commands.Context, *prefix: str):
     # unpack that tuple into a string
     prefix = ' '.join(prefix)
 
-    # unpickle config data
-    with open("config.pkl", "rb") as f:
-        config = pickle.load(f)
+    # get config data off the shelf
+    with shelve.open("config.shlv") as conf:
+        _prefix = conf["prefix"]
     
-    # default answer
-    if not prefix:
-        await ctx.send(f"Current prefix: `{config['prefix']}`.")
-        return
-
-    # change global prefix and pickle
-    config["prefix"] = prefix
-    with open("config.pkl", "wb") as f:
-        pickle.dump(config, f)
+        # default answer
+        if not prefix:
+            await ctx.send(f"Current prefix: `{_prefix}`.")
+            return
+        
+        conf["prefix"] = prefix
 
     # change prefix locally
     bot.command_prefix = prefix
@@ -181,19 +172,16 @@ async def status(ctx: commands.Context, *status: str):
     # unpack that tuple into a string
     status = ' '.join(status)
 
-    # unpickle
-    with open("config.pkl", "rb") as f:
-        config = pickle.load(f)
+    # open shelf
+    with shelve.open("config.shlv") as conf:
+        _status = conf["status"]
     
-    # default answer, in case of empty args
-    if not status:
-        await ctx.send(f"Current status: `{config['status']}`.")
-        return
-
-    # pickle back and change status globally
-    config["status"] = status
-    with open("config.pkl", "wb") as f:
-        pickle.dump(config, f)
+        # default answer, in case of empty args
+        if not status:
+            await ctx.send(f"Current status: `{_status}`.")
+            return
+        
+        conf["status"] = status
 
     # change status locally
     await bot.change_presence(activity=discord.Game(status))
@@ -334,7 +322,10 @@ async def song(ctx: commands.Context):
     So, go on, listen to some music when the bot is there!"""
     
     # get a random song's data
-    data = rd.choice(list(handleSongs().values()))
+    try:
+        data = rd.choice(list(handleSongs().values()))
+    except:
+        await ctx.channel.send("I have no musical taste...yet :sob:")
 
     # create embed accordingly
     Embed = discord.Embed(description=f"by {', '.join(data['artists'])}\non {data['album']}", color=data["color"])
@@ -345,4 +336,4 @@ async def song(ctx: commands.Context):
 
 # run bot
 # log level can be changed to something more specific, if needed
-bot.run(TOKEN, log_handler=handler, log_level=logging.DEBUG)
+bot.run(TOKEN, log_handler=handler)

@@ -1,4 +1,4 @@
-*.pkl
+*.shlv
 .env
 discord.log
 __pycache__

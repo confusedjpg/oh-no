@@ -5,7 +5,7 @@
 import random as rd
 import requests
 import os
-import pickle
+import shelve
 import io
 
 # third-party modules
@@ -133,23 +133,17 @@ def getWeather(location, units = "metric"):
 
 # handle song data
 def handleSongs(spotify = None):
-    # create file if not there
-    if not os.path.isfile("songs.pkl"):
-        with open("songs.pkl", "wb") as f:
-            pickle.dump({}, f)
-    
     # load data from the file
-    with open("songs.pkl", "rb") as f:
-        data = pickle.load(f)
+    with shelve.open("songs.shlv") as songs:
+        data = dict(songs)
 
-    # return that data it if needed
-    if not spotify:
-        return data
-    
-    # otherwise, add a new song to the list
-    else:
-        if spotify.track_id not in data:
-            with open("songs.pkl", "wb") as f:
+        # return that data it if needed
+        if not spotify:
+            return data
+        
+        # otherwise, add a new song to the list
+        else:
+            if spotify.track_id not in data:
                 # get the accent color of the song's cover
                 # file object: much easier and simpler than writing the file to disk and then deleting it
                 img = io.BytesIO(requests.get(spotify.album_cover_url).content)
@@ -158,7 +152,7 @@ def handleSongs(spotify = None):
                 r,g,b = ColorThief(img).get_color(quality=10)
 
                 # put all this new data into the file
-                data[spotify.track_id] = {
+                songs[spotify.track_id] = {
                     "album": spotify.album, 
                     "album_cover_url": spotify.album_cover_url, 
                     "artists": spotify.artists,
@@ -166,5 +160,3 @@ def handleSongs(spotify = None):
                     "title": spotify.title,
                     "track_url": spotify.track_url
                     }
-                
-                pickle.dump(data, f)
